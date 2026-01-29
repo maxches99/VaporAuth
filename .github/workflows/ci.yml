@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }} - Swift ${{ matrix.swift }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, macos-15]
+        swift: ["6.0"]
+        include:
+          # macOS 14 (Sonoma) - Xcode 15.4 (Swift 5.10)
+          - os: macos-14
+            xcode: "15.4"
+            swift: "5.10"
+          # macOS 14 (Sonoma) - Xcode 16.0 (Swift 6.0)
+          - os: macos-14
+            xcode: "16.0"
+            swift: "6.0"
+          # macOS 15 (Sequoia) - Latest Xcode (Swift 6.0+)
+          - os: macos-15
+            xcode: "latest"
+            swift: "6.0"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Select Xcode version
+        run: sudo xcode-select -s /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
+        if: matrix.xcode != 'latest'
+
+      - name: Show Swift version
+        run: swift --version
+
+      - name: Cache Swift Package Manager
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Build
+        run: swift build --build-tests
+
+      - name: Run tests
+        run: swift test --parallel
+
+  lint:
+    name: Code Quality
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build for analysis
+        run: swift build
+
+      - name: Check for warnings
+        run: |
+          swift build 2>&1 | tee build.log
+          if grep -q "warning:" build.log; then
+            echo "⚠️ Build contains warnings"
+            grep "warning:" build.log
+            exit 1
+          fi
+          echo "✅ No warnings found"

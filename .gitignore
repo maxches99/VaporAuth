@@ -65,3 +65,7 @@ Icon
 
 # Testing
 .coverage
+
+# Generated documentation
+docs/
+*.doccarchive
