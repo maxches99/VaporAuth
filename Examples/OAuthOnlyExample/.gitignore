@@ -1,0 +1,29 @@
+# Swift Package Manager
+.build/
+.swiftpm/
+Packages/
+Package.resolved
+xcuserdata/
+DerivedData/
+
+# Environment variables
+.env
+
+# IDE files
+.DS_Store
+.vscode/
+.idea/
+
+# Xcode
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+
+# Logs
+*.log
+
+# Database
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.db

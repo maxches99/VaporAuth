@@ -1,7 +1,10 @@
 import Vapor
+import Logging
+import NIOCore
+import NIOPosix
 
 @main
-struct Run {
+enum Entrypoint {
     static func main() async throws {
         var env = try Environment.detect()
         try LoggingSystem.bootstrap(from: &env)
@@ -10,12 +13,12 @@ struct Run {
 
         do {
             try await configure(app)
+            try await app.execute()
         } catch {
             app.logger.report(error: error)
             try? await app.asyncShutdown()
             throw error
         }
-        try await app.execute()
         try await app.asyncShutdown()
     }
 }

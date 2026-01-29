@@ -13,6 +13,11 @@ public func configure(_ app: Application) async throws {
     app.http.server.configuration.hostname = "0.0.0.0"
     app.http.server.configuration.port = 8080
 
+    // MARK: - Middleware Configuration
+
+    // Serve files from /Public directory
+    app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
+
     // MARK: - Database Configuration
 
     let databaseHost = Environment.get("DATABASE_HOST") ?? "localhost"

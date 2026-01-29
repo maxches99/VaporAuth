@@ -13,6 +13,8 @@ let package = Package(
         .package(url: "https://github.com/vapor/fluent.git", from: "4.9.0"),
         // Fluent PostgreSQL driver
         .package(url: "https://github.com/vapor/fluent-postgres-driver.git", from: "2.8.0"),
+        // NIO for async/await support
+        .package(url: "https://github.com/apple/swift-nio.git", from: "2.65.0"),
         // VaporAuth - use local package during development
         .package(path: "../../")
     ],
@@ -23,6 +25,8 @@ let package = Package(
                 .product(name: "Vapor", package: "vapor"),
                 .product(name: "Fluent", package: "fluent"),
                 .product(name: "FluentPostgresDriver", package: "fluent-postgres-driver"),
+                .product(name: "NIOCore", package: "swift-nio"),
+                .product(name: "NIOPosix", package: "swift-nio"),
                 // All VaporAuth modules
                 .product(name: "VaporAuthCore", package: "VaporAuth"),
                 .product(name: "VaporAuthOAuth", package: "VaporAuth"),

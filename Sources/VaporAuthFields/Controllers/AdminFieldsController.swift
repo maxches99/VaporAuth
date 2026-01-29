@@ -1,7 +1,6 @@
 import Fluent
 import Vapor
 import VaporAuthCore
-import VaporAuthAdmin
 
 /// Admin controller for managing registration fields
 /// Requires admin authentication

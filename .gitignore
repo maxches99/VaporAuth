@@ -1,0 +1,67 @@
+# Swift Package Manager
+.build/
+.swiftpm/
+Packages/
+xcuserdata/
+DerivedData/
+*.xcodeproj
+*.xcworkspace
+
+# Package.resolved - include in root, ignore in examples
+# /Package.resolved is tracked
+Examples/**/Package.resolved
+
+# Environment variables
+.env
+*.env
+!.env.example
+
+# IDE files
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Xcode
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+*.xcuserstate
+*.xcuserdatad
+
+# Vapor
+Public/vapor.png
+
+# Logs
+*.log
+Logs/
+
+# Database
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.db
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+# Linux
+*~
+.directory
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Testing
+.coverage

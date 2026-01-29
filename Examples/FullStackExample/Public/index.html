@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BaseVapor Auth Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .section h2::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin-right: 12px;
+            border-radius: 2px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="tel"],
+        input[type="date"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        input[type="tel"]:focus,
+        input[type="date"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .message {
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .user-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .user-info.show {
+            display: block;
+        }
+
+        .user-info p {
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .user-info strong {
+            color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .button-group button {
+            flex: 1;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 8px 20px rgba(108, 117, 125, 0.4);
+        }
+
+        .divider {
+            height: 1px;
+            background: #e0e0e0;
+            margin: 40px 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .oauth-section {
+            margin-top: 30px;
+        }
+
+        .divider-text {
+            text-align: center;
+            position: relative;
+            margin: 30px 0;
+        }
+
+        .divider-text::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #e0e0e0;
+        }
+
+        .divider-text span {
+            background: white;
+            padding: 0 16px;
+            color: #999;
+            font-size: 13px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .oauth-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .oauth-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 24px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            color: #333;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .oauth-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-color: #ccc;
+        }
+
+        .oauth-btn.google {
+            border-color: #4285f4;
+            color: #4285f4;
+        }
+
+        .oauth-btn.google:hover {
+            background: #f8fbff;
+            border-color: #4285f4;
+            box-shadow: 0 4px 12px rgba(66, 133, 244, 0.2);
+        }
+
+        @media (max-width: 600px) {
+            .content {
+                padding: 24px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>BaseVapor Auth Demo</h1>
+            <p>Тестирование API аутентификации</p>
+        </div>
+
+        <div class="content">
+            <!-- Регистрация -->
+            <div class="section" id="registerSection">
+                <h2>Регистрация</h2>
+                <form id="registerForm">
+                    <!-- Динамические поля будут добавлены сюда -->
+                    <div id="dynamicFields"></div>
+
+                    <div class="form-group">
+                        <label for="registerEmail">Email *</label>
+                        <input type="email" id="registerEmail" required placeholder="example@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPassword">Пароль *</label>
+                        <input type="password" id="registerPassword" required placeholder="Минимум 8 символов">
+                    </div>
+                    <button type="submit">Зарегистрироваться</button>
+                </form>
+                <div id="registerMessage" class="message"></div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Вход -->
+            <div class="section" id="loginSection">
+                <h2>Вход</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="loginEmail">Email</label>
+                        <input type="email" id="loginEmail" required placeholder="example@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Пароль</label>
+                        <input type="password" id="loginPassword" required placeholder="Введите пароль">
+                    </div>
+                    <button type="submit">Войти</button>
+                </form>
+                <div id="loginMessage" class="message"></div>
+
+                <!-- OAuth Section -->
+                <div class="oauth-section">
+                    <div class="divider-text">
+                        <span>или войдите с помощью</span>
+                    </div>
+                    <div class="oauth-buttons">
+                        <button id="googleLoginBtn" class="oauth-btn google">
+                            Войти через Google
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Информация о пользователе -->
+            <div class="section">
+                <h2>Профиль пользователя</h2>
+                <div id="userInfo" class="user-info">
+                    <p><strong>ID:</strong> <span id="userId"></span></p>
+                    <p><strong>Имя:</strong> <span id="userName"></span></p>
+                    <p><strong>Email:</strong> <span id="userEmail"></span></p>
+                    <div id="customFieldsContainer"></div>
+                    <p><strong>Токен:</strong> <span id="userToken" style="word-break: break-all; font-size: 12px;"></span></p>
+                </div>
+                <div class="button-group">
+                    <button id="checkAuthBtn" class="btn-secondary">Проверить авторизацию</button>
+                    <button id="logoutBtn" class="btn-secondary">Выйти</button>
+                </div>
+                <div id="profileMessage" class="message"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8080';
+        let authToken = localStorage.getItem('authToken') || null;
+        let registrationFields = [];
+
+        // Загрузка полей регистрации при загрузке страницы
+        async function loadRegistrationFields() {
+            try {
+                const response = await fetch(`${API_URL}/registration-fields`);
+                if (response.ok) {
+                    registrationFields = await response.json();
+                    generateDynamicFields();
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки полей регистрации:', error);
+            }
+        }
+
+        // Генерация динамических полей формы
+        function generateDynamicFields() {
+            const container = document.getElementById('dynamicFields');
+            container.innerHTML = '';
+
+            registrationFields.forEach(field => {
+                const formGroup = document.createElement('div');
+                formGroup.className = 'form-group';
+
+                const label = document.createElement('label');
+                label.htmlFor = `field_${field.fieldKey}`;
+                label.textContent = field.fieldLabel + (field.isRequired ? ' *' : '');
+
+                const input = document.createElement('input');
+                input.id = `field_${field.fieldKey}`;
+                input.name = field.fieldKey;
+
+                // Определение типа input на основе типа поля
+                switch (field.fieldType) {
+                    case 'email':
+                        input.type = 'email';
+                        break;
+                    case 'phone':
+                        input.type = 'tel';
+                        break;
+                    case 'date':
+                        input.type = 'date';
+                        break;
+                    default:
+                        input.type = 'text';
+                }
+
+                if (field.isRequired) {
+                    input.required = true;
+                }
+
+                if (field.placeholder) {
+                    input.placeholder = field.placeholder;
+                }
+
+                formGroup.appendChild(label);
+                formGroup.appendChild(input);
+                container.appendChild(formGroup);
+            });
+        }
+
+        // Загружаем поля при загрузке страницы
+        loadRegistrationFields();
+
+        // Handle OAuth callback
+        const urlParams = new URLSearchParams(window.location.search);
+        const oauthToken = urlParams.get('token');
+        const source = urlParams.get('source');
+        const error = urlParams.get('error');
+
+        if (oauthToken) {
+            authToken = oauthToken;
+            localStorage.setItem('authToken', authToken);
+            window.history.replaceState({}, document.title, window.location.pathname);
+            const messageEl = document.getElementById('loginMessage');
+            showMessage(messageEl, `Успешный вход через ${source}!`, 'success');
+            checkAuth();
+        }
+
+        if (error) {
+            const messageEl = document.getElementById('loginMessage');
+            showMessage(messageEl, `Ошибка OAuth: ${urlParams.get('reason') || 'Неизвестная ошибка'}`, 'error');
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+        // Проверка авторизации при загрузке
+        if (authToken && !oauthToken) {
+            checkAuth();
+        }
+
+        // Регистрация
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const messageEl = document.getElementById('registerMessage');
+
+            // Собираем значения динамических полей
+            const fields = {};
+            registrationFields.forEach(field => {
+                const input = document.getElementById(`field_${field.fieldKey}`);
+                if (input && input.value) {
+                    fields[field.fieldKey] = input.value;
+                }
+            });
+
+            try {
+                const response = await fetch(`${API_URL}/auth/register-dynamic`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password, fields })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    authToken = data.token;
+                    localStorage.setItem('authToken', authToken);
+                    showMessage(messageEl, 'Регистрация успешна!', 'success');
+                    displayUserInfo(data);
+                    document.getElementById('registerForm').reset();
+                } else {
+                    showMessage(messageEl, data.reason || 'Ошибка регистрации', 'error');
+                }
+            } catch (error) {
+                showMessage(messageEl, 'Ошибка соединения с сервером', 'error');
+            }
+        });
+
+        // Вход
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const messageEl = document.getElementById('loginMessage');
+
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    authToken = data.token;
+                    localStorage.setItem('authToken', authToken);
+                    showMessage(messageEl, 'Вход выполнен успешно!', 'success');
+                    displayUserInfo(data);
+                    document.getElementById('loginForm').reset();
+                } else {
+                    showMessage(messageEl, data.reason || 'Неверный email или пароль', 'error');
+                }
+            } catch (error) {
+                showMessage(messageEl, 'Ошибка соединения с сервером', 'error');
+            }
+        });
+
+        // Проверка авторизации
+        document.getElementById('checkAuthBtn').addEventListener('click', checkAuth);
+
+        async function checkAuth() {
+            const messageEl = document.getElementById('profileMessage');
+
+            if (!authToken) {
+                showMessage(messageEl, 'Вы не авторизованы', 'error');
+                return;
+            }
+
+            try {
+                // Пытаемся получить расширенную информацию с кастомными полями
+                const response = await fetch(`${API_URL}/auth/me-extended`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage(messageEl, 'Авторизация действительна', 'success');
+                    displayUserInfo({ ...data, token: authToken });
+                } else {
+                    showMessage(messageEl, 'Токен недействителен', 'error');
+                    clearAuth();
+                }
+            } catch (error) {
+                showMessage(messageEl, 'Ошибка соединения с сервером', 'error');
+            }
+        }
+
+        // Выход
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            const messageEl = document.getElementById('profileMessage');
+
+            if (!authToken) {
+                showMessage(messageEl, 'Вы не авторизованы', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/auth/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok || response.status === 204) {
+                    showMessage(messageEl, 'Выход выполнен успешно', 'success');
+                    clearAuth();
+                } else {
+                    showMessage(messageEl, 'Ошибка при выходе', 'error');
+                }
+            } catch (error) {
+                showMessage(messageEl, 'Ошибка соединения с сервером', 'error');
+            }
+        });
+
+        // Google OAuth login
+        document.getElementById('googleLoginBtn').addEventListener('click', () => {
+            window.location.href = `${API_URL}/auth/google`;
+        });
+
+        // Вспомогательные функции
+        function showMessage(element, text, type) {
+            element.textContent = text;
+            element.className = `message ${type}`;
+            setTimeout(() => {
+                element.className = 'message';
+            }, 5000);
+        }
+
+        function displayUserInfo(data) {
+            document.getElementById('userId').textContent = data.id;
+            document.getElementById('userName').textContent = data.name;
+            document.getElementById('userEmail').textContent = data.email;
+            document.getElementById('userToken').textContent = data.token;
+
+            // Отображение кастомных полей
+            const customFieldsContainer = document.getElementById('customFieldsContainer');
+            customFieldsContainer.innerHTML = '';
+
+            if (data.customFields && data.customFields.length > 0) {
+                data.customFields.forEach(field => {
+                    const p = document.createElement('p');
+                    const strong = document.createElement('strong');
+                    strong.textContent = field.fieldLabel + ':';
+                    const span = document.createElement('span');
+                    span.textContent = ' ' + field.fieldValue;
+                    p.appendChild(strong);
+                    p.appendChild(span);
+                    customFieldsContainer.appendChild(p);
+                });
+            }
+
+            document.getElementById('userInfo').classList.add('show');
+        }
+
+        function clearAuth() {
+            authToken = null;
+            localStorage.removeItem('authToken');
+            document.getElementById('userInfo').classList.remove('show');
+        }
+    </script>
+</body>
+</html>

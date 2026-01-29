@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ панель - Настройка полей регистрации</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .fields-grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .field-card {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s;
+        }
+
+        .field-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+        }
+
+        .field-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .field-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .field-key {
+            font-size: 12px;
+            color: #999;
+            font-family: monospace;
+            background: #e0e0e0;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .field-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .field-detail {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .field-detail label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .field-detail span {
+            font-size: 14px;
+            color: #333;
+        }
+
+        .field-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 26px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #28a745;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 600px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .message {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .add-field-btn {
+            margin-bottom: 20px;
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Админ панель - Поля регистрации</h1>
+            <button class="logout-btn" onclick="logout()">Выход</button>
+        </div>
+
+        <div class="content">
+            <div id="message" class="message"></div>
+
+            <button class="add-field-btn" onclick="openCreateModal()">
+                + Добавить новое поле
+            </button>
+
+            <div id="fieldsGrid" class="fields-grid">
+                <!-- Поля будут загружены динамически -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для создания/редактирования поля -->
+    <div id="fieldModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Создать поле</h2>
+            <form id="fieldForm">
+                <div class="form-group">
+                    <label>Ключ поля (только для создания)</label>
+                    <input type="text" id="fieldKey" name="fieldKey" required>
+                </div>
+                <div class="form-group">
+                    <label>Название поля</label>
+                    <input type="text" id="fieldLabel" name="fieldLabel" required>
+                </div>
+                <div class="form-group">
+                    <label>Тип поля</label>
+                    <select id="fieldType" name="fieldType" required>
+                        <option value="text">Текст</option>
+                        <option value="email">Email</option>
+                        <option value="phone">Телефон</option>
+                        <option value="date">Дата</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Placeholder</label>
+                    <input type="text" id="placeholder" name="placeholder">
+                </div>
+                <div class="form-group">
+                    <label>Паттерн валидации (regex)</label>
+                    <input type="text" id="validationPattern" name="validationPattern">
+                </div>
+                <div class="form-group">
+                    <label>Порядок отображения</label>
+                    <input type="number" id="order" name="order" value="0" required>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="isRequired" name="isRequired">
+                    <label for="isRequired">Обязательное поле</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="isEnabled" name="isEnabled" checked>
+                    <label for="isEnabled">Активно</label>
+                </div>
+                <div class="field-actions">
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8080';
+        let authToken = localStorage.getItem('authToken');
+        let isEditMode = false;
+        let editFieldId = null;
+
+        // Проверяем авторизацию при загрузке
+        if (!authToken) {
+            window.location.href = '/index.html';
+        }
+
+        // Загрузка полей при старте
+        loadFields();
+
+        async function loadFields() {
+            try {
+                const response = await fetch(`${API_URL}/admin/registration-fields`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        showMessage('Нет доступа. Требуются права администратора', 'error');
+                        setTimeout(() => window.location.href = '/index.html', 2000);
+                        return;
+                    }
+                    throw new Error('Ошибка загрузки полей');
+                }
+
+                const fields = await response.json();
+                renderFields(fields);
+            } catch (error) {
+                showMessage('Ошибка загрузки полей: ' + error.message, 'error');
+            }
+        }
+
+        function renderFields(fields) {
+            const grid = document.getElementById('fieldsGrid');
+            grid.innerHTML = fields.map(field => `
+                <div class="field-card">
+                    <div class="field-header">
+                        <div>
+                            <div class="field-title">${field.fieldLabel}</div>
+                            <div class="field-key">${field.fieldKey}</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" ${field.isEnabled ? 'checked' : ''}
+                                   onchange="toggleField('${field.id}', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="field-details">
+                        <div class="field-detail">
+                            <label>Тип</label>
+                            <span>${field.fieldType}</span>
+                        </div>
+                        <div class="field-detail">
+                            <label>Обязательное</label>
+                            <span>${field.isRequired ? 'Да' : 'Нет'}</span>
+                        </div>
+                        <div class="field-detail">
+                            <label>Порядок</label>
+                            <span>${field.order}</span>
+                        </div>
+                    </div>
+                    ${field.placeholder ? `<p style="margin-bottom: 16px; color: #666; font-size: 14px;">Placeholder: ${field.placeholder}</p>` : ''}
+                    <div class="field-actions">
+                        <button class="btn btn-primary" onclick="openEditModal('${field.id}')">Редактировать</button>
+                        <button class="btn btn-danger" onclick="deleteField('${field.id}')">Удалить</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openCreateModal() {
+            isEditMode = false;
+            document.getElementById('modalTitle').textContent = 'Создать поле';
+            document.getElementById('fieldForm').reset();
+            document.getElementById('fieldKey').disabled = false;
+            document.getElementById('fieldModal').style.display = 'block';
+        }
+
+        async function openEditModal(fieldId) {
+            isEditMode = true;
+            editFieldId = fieldId;
+            document.getElementById('modalTitle').textContent = 'Редактировать поле';
+
+            try {
+                const response = await fetch(`${API_URL}/admin/registration-fields/${fieldId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const field = await response.json();
+
+                document.getElementById('fieldKey').value = field.fieldKey;
+                document.getElementById('fieldKey').disabled = true;
+                document.getElementById('fieldLabel').value = field.fieldLabel;
+                document.getElementById('fieldType').value = field.fieldType;
+                document.getElementById('placeholder').value = field.placeholder || '';
+                document.getElementById('validationPattern').value = field.validationPattern || '';
+                document.getElementById('order').value = field.order;
+                document.getElementById('isRequired').checked = field.isRequired;
+                document.getElementById('isEnabled').checked = field.isEnabled;
+
+                document.getElementById('fieldModal').style.display = 'block';
+            } catch (error) {
+                showMessage('Ошибка загрузки поля: ' + error.message, 'error');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('fieldModal').style.display = 'none';
+        }
+
+        document.getElementById('fieldForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = {
+                fieldLabel: document.getElementById('fieldLabel').value,
+                isRequired: document.getElementById('isRequired').checked,
+                isEnabled: document.getElementById('isEnabled').checked,
+                order: parseInt(document.getElementById('order').value),
+                placeholder: document.getElementById('placeholder').value || null,
+                validationPattern: document.getElementById('validationPattern').value || null
+            };
+
+            if (!isEditMode) {
+                formData.fieldKey = document.getElementById('fieldKey').value;
+                formData.fieldType = document.getElementById('fieldType').value;
+            }
+
+            try {
+                const url = isEditMode
+                    ? `${API_URL}/admin/registration-fields/${editFieldId}`
+                    : `${API_URL}/admin/registration-fields`;
+
+                const response = await fetch(url, {
+                    method: isEditMode ? 'PUT' : 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    showMessage(isEditMode ? 'Поле обновлено' : 'Поле создано', 'success');
+                    closeModal();
+                    loadFields();
+                } else {
+                    const error = await response.json();
+                    showMessage(error.reason || 'Ошибка сохранения', 'error');
+                }
+            } catch (error) {
+                showMessage('Ошибка соединения: ' + error.message, 'error');
+            }
+        });
+
+        async function toggleField(fieldId, isEnabled) {
+            try {
+                const response = await fetch(`${API_URL}/admin/registration-fields/${fieldId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ isEnabled })
+                });
+
+                if (response.ok) {
+                    showMessage('Статус поля обновлен', 'success');
+                } else {
+                    throw new Error('Ошибка обновления');
+                }
+            } catch (error) {
+                showMessage('Ошибка: ' + error.message, 'error');
+                loadFields();
+            }
+        }
+
+        async function deleteField(fieldId) {
+            if (!confirm('Вы уверены, что хотите удалить это поле?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/admin/registration-fields/${fieldId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    showMessage('Поле удалено', 'success');
+                    loadFields();
+                } else {
+                    throw new Error('Ошибка удаления');
+                }
+            } catch (error) {
+                showMessage('Ошибка: ' + error.message, 'error');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('authToken');
+            window.location.href = '/index.html';
+        }
+
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type}`;
+            messageEl.style.display = 'block';
+            setTimeout(() => {
+                messageEl.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
