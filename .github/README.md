@@ -1,160 +1,236 @@
-# GitHub Actions Workflows
+# Getting Started with VaporAuth
 
-Этот проект использует GitHub Actions для автоматизации CI/CD процессов.
+This guide will help you integrate VaporAuth into your Vapor application.
 
-## Доступные Workflows
+## Installation
 
-### 1. CI (Continuous Integration)
-**Файл:** `.github/workflows/ci.yml`
+### 1. Add Dependency
 
-**Триггеры:**
-- Push в ветки: `main`, `master`, `develop`
-- Pull Request в эти ветки
+Add VaporAuth to your `Package.swift`:
 
-**Что делает:**
-- Запускает тесты на нескольких версиях macOS и Swift
-- Проверяет компиляцию проекта
-- Проверяет код на наличие предупреждений (warnings)
+```swift
+dependencies: [
+    .package(url: "https://github.com/yourusername/VaporAuth.git", from: "1.0.0")
+],
+targets: [
+    .target(
+        name: "App",
+        dependencies: [
+            // Choose modules based on your needs:
+            .product(name: "VaporAuthCore", package: "VaporAuth"),
+            // Optional modules:
+            // .product(name: "VaporAuthOAuth", package: "VaporAuth"),
+            // .product(name: "VaporAuthAdmin", package: "VaporAuth"),
+            // .product(name: "VaporAuthFields", package: "VaporAuth"),
+        ]
+    )
+]
+```
 
-**Матрица тестирования:**
-- macOS 14 (Sonoma) + Swift 5.10 (Xcode 15.4)
-- macOS 14 (Sonoma) + Swift 6.0 (Xcode 16.0)
-- macOS 15 (Sequoia) + Swift 6.0 (latest Xcode)
-
-**Статус:** Запускается автоматически при каждом push/PR
-
----
-
-### 2. Release (Автоматические релизы)
-**Файл:** `.github/workflows/release.yml`
-
-**Триггер:**
-- Создание тега с версией (например: `1.0.0`, `2.1.3`, `1.0.0-beta`)
-
-**Что делает:**
-1. Запускает все тесты перед созданием релиза
-2. Извлекает changelog для версии из `CHANGELOG.md`
-3. Создает GitHub Release с описанием изменений
-4. Автоматически помечает pre-release (если версия содержит дефис)
-
-**Как создать релиз:**
+### 2. Resolve Dependencies
 
 ```bash
-# 1. Обновите CHANGELOG.md
-# 2. Создайте и отправьте тег
-git tag 1.0.0
-git push origin 1.0.0
-
-# Для pre-release версий
-git tag 1.0.0-beta.1
-git push origin 1.0.0-beta.1
+swift package resolve
 ```
 
-**Статус:** Запускается при создании тега версии
+## Quick Start (5 Minutes)
 
----
+The fastest way to get started is using the default models:
 
-### 3. Documentation (Генерация документации)
-**Файл:** `.github/workflows/docs.yml`
+### 1. Configure Database
 
-**Триггеры:**
-- Push в ветки `main` или `master` (только если изменились файлы в `Sources/`, `Package.swift` или сам workflow)
-- Ручной запуск через GitHub UI
+```swift
+// configure.swift
+import Vapor
+import Fluent
+import FluentPostgresDriver
+import VaporAuthCore
 
-**Что делает:**
-1. Генерирует документацию с помощью Swift DocC
-2. Публикует документацию на GitHub Pages
+public func configure(_ app: Application) async throws {
+    // Database
+    app.databases.use(.postgres(
+        hostname: Environment.get("DATABASE_HOST") ?? "localhost",
+        username: Environment.get("DATABASE_USERNAME") ?? "vapor",
+        password: Environment.get("DATABASE_PASSWORD") ?? "password",
+        database: Environment.get("DATABASE_NAME") ?? "vapor_db"
+    ), as: .psql)
 
-**Требования для первого запуска:**
-1. Включите GitHub Pages в настройках репозитория:
-   - Settings → Pages
-   - Source: "GitHub Actions"
+    // Migrations
+    app.migrations.add(CreateUserMigration<DefaultUser>())
+    app.migrations.add(CreateTokenMigration<DefaultUserToken>())
 
-**URL документации:**
-После первого запуска документация будет доступна по адресу:
-```
-https://yourusername.github.io/VaporAuth/
-```
-
-**Ручной запуск:**
-- Перейдите в Actions → Documentation → Run workflow
-
-**Статус:** Запускается при изменениях в исходниках на main/master
-
----
-
-## Настройка после форка/клонирования
-
-### Шаг 1: Включите GitHub Pages
-1. Перейдите в **Settings** → **Pages**
-2. В разделе **Source** выберите **GitHub Actions**
-3. Сохраните изменения
-
-### Шаг 2: Проверьте Permissions
-1. Перейдите в **Settings** → **Actions** → **General**
-2. В разделе **Workflow permissions** выберите:
-   - ✅ Read and write permissions
-   - ✅ Allow GitHub Actions to create and approve pull requests
-3. Сохраните изменения
-
-### Шаг 3: Обновите URL документации (опционально)
-В файле `.github/workflows/docs.yml` замените `--hosting-base-path VaporAuth` на название вашего репозитория.
-
-### Шаг 4: Обновите CHANGELOG.md
-В файле `CHANGELOG.md` замените `yourusername` на ваше имя пользователя GitHub.
-
----
-
-## Badges для README
-
-Добавьте эти badges в основной README.md:
-
-```markdown
-[![CI](https://github.com/yourusername/VaporAuth/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/VaporAuth/actions/workflows/ci.yml)
-[![Documentation](https://github.com/yourusername/VaporAuth/actions/workflows/docs.yml/badge.svg)](https://github.com/yourusername/VaporAuth/actions/workflows/docs.yml)
-[![Release](https://github.com/yourusername/VaporAuth/actions/workflows/release.yml/badge.svg)](https://github.com/yourusername/VaporAuth/actions/workflows/release.yml)
+    // Routes
+    try routes(app)
+}
 ```
 
-Замените `yourusername` на ваше имя пользователя GitHub.
+### 2. Register Routes
 
----
+```swift
+// routes.swift
+import Vapor
+import VaporAuthCore
 
-## Часто задаваемые вопросы
+func routes(_ app: Application) throws {
+    // Register authentication controller
+    try app.register(collection: SimpleAuthController())
+}
+```
 
-### Как пропустить CI при commit?
-Добавьте `[skip ci]` в сообщение коммита:
+### 3. Run Migrations
+
 ```bash
-git commit -m "docs: update README [skip ci]"
+swift run Run migrate --yes
 ```
 
-### Как запустить workflow вручную?
-1. Перейдите в **Actions**
-2. Выберите нужный workflow
-3. Нажмите **Run workflow**
+### 4. Start Server
 
-### Как изменить версии Swift/macOS для тестирования?
-Отредактируйте matrix в файле `.github/workflows/ci.yml`:
-```yaml
-matrix:
-  os: [macos-14, macos-15]
-  swift: ["6.0"]
+```bash
+swift run
 ```
 
-### Что делать если тесты падают?
-1. Проверьте логи в разделе **Actions**
-2. Воспроизведите ошибку локально
-3. Исправьте и отправьте новый commit
+You now have these endpoints:
+- `POST /auth/register` - Register new user
+- `POST /auth/login` - Login
+- `GET /auth/me` - Get current user (protected)
+- `POST /auth/logout` - Logout (protected)
 
-### Как отключить какой-то workflow?
-1. Перейдите в **Actions**
-2. Выберите workflow
-3. Нажмите на три точки → **Disable workflow**
+## Testing Your API
 
----
+### Register a User
 
-## Полезные ссылки
+```bash
+curl -X POST http://localhost:8080/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "password123",
+    "name": "John Doe"
+  }'
+```
 
-- [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [Swift on GitHub Actions](https://github.com/swift-actions)
-- [GitHub Pages Documentation](https://docs.github.com/en/pages)
-- [Swift DocC Documentation](https://www.swift.org/documentation/docc/)
+Response:
+```json
+{
+  "id": "uuid-here",
+  "email": "user@example.com",
+  "name": "John Doe",
+  "token": "authentication-token"
+}
+```
+
+### Login
+
+```bash
+curl -X POST http://localhost:8080/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "password123"
+  }'
+```
+
+### Access Protected Endpoint
+
+```bash
+curl -X GET http://localhost:8080/auth/me \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+## Next Steps
+
+### Add OAuth Authentication
+
+See [OAuth Integration Guide](OAuthIntegration.md)
+
+### Add Admin Roles
+
+See [Admin Roles Guide](AdminRoles.md)
+
+### Add Custom Fields
+
+See [Custom Fields Guide](CustomFields.md)
+
+### Use Custom User Model
+
+See [Custom Models Guide](CustomModels.md)
+
+## Module Selection Guide
+
+Choose modules based on your requirements:
+
+| Need | Use Modules | Example |
+|------|-------------|---------|
+| Basic auth only | Core | [MinimalAuthExample](../Examples/MinimalAuthExample/) |
+| Auth + OAuth | Core + OAuth | [OAuthOnlyExample](../Examples/OAuthOnlyExample/) |
+| Full featured app | All modules | [FullStackExample](../Examples/FullStackExample/) |
+
+## Common Issues
+
+### Database Connection Failed
+
+**Error:** "Connection refused"
+
+**Solution:** Make sure PostgreSQL is running:
+```bash
+docker run --name postgres -e POSTGRES_PASSWORD=password -p 5432:5432 -d postgres
+```
+
+### Migration Failed
+
+**Error:** "relation already exists"
+
+**Solution:** Either:
+1. Drop the database and recreate
+2. Or revert migrations: `swift run Run migrate --revert --yes`
+
+### Token Not Valid
+
+**Error:** 401 Unauthorized
+
+**Solutions:**
+1. Check token hasn't expired (30 days default)
+2. Ensure correct Bearer token format: `Authorization: Bearer TOKEN`
+3. Verify token exists in database
+
+## Environment Variables
+
+Create a `.env` file in your project root:
+
+```env
+# Database
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_USERNAME=vapor_username
+DATABASE_PASSWORD=vapor_password
+DATABASE_NAME=vapor_database
+
+# Optional: OAuth (if using VaporAuthOAuth)
+GOOGLE_CLIENT_ID=your_client_id
+GOOGLE_CLIENT_SECRET=your_client_secret
+GOOGLE_CALLBACK_URL=http://localhost:8080/auth/google/callback
+
+# Optional: Admin (if using VaporAuthAdmin)
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=admin123
+ADMIN_NAME=Administrator
+```
+
+## Production Checklist
+
+Before deploying to production:
+
+- [ ] Change default database credentials
+- [ ] Use strong admin password
+- [ ] Set up HTTPS/TLS
+- [ ] Configure production database
+- [ ] Set appropriate token expiration
+- [ ] Enable logging
+- [ ] Set up monitoring
+- [ ] Review security settings
+
+## Support
+
+- 📖 [Full Documentation](./README.md)
+- 💬 [GitHub Discussions](https://github.com/yourusername/VaporAuth/discussions)
+- 🐛 [Report Issues](https://github.com/yourusername/VaporAuth/issues)
