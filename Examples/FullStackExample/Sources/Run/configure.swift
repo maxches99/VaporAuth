@@ -1,0 +1,65 @@
+import Vapor
+import Fluent
+import FluentPostgresDriver
+import VaporAuthCore
+import VaporAuthOAuth
+import VaporAuthAdmin
+import VaporAuthFields
+
+/// Configure the application
+public func configure(_ app: Application) async throws {
+    // MARK: - Server Configuration
+
+    app.http.server.configuration.hostname = "0.0.0.0"
+    app.http.server.configuration.port = 8080
+
+    // MARK: - Database Configuration
+
+    let databaseHost = Environment.get("DATABASE_HOST") ?? "localhost"
+    let databasePort = Environment.get("DATABASE_PORT").flatMap(Int.init) ?? 5432
+    let databaseUsername = Environment.get("DATABASE_USERNAME") ?? "vapor_username"
+    let databasePassword = Environment.get("DATABASE_PASSWORD") ?? "vapor_password"
+    let databaseName = Environment.get("DATABASE_NAME") ?? "vapor_database"
+
+    app.databases.use(
+        .postgres(
+            configuration: .init(
+                hostname: databaseHost,
+                port: databasePort,
+                username: databaseUsername,
+                password: databasePassword,
+                database: databaseName,
+                tls: .prefer(try .init(configuration: .clientDefault))
+            )
+        ),
+        as: .psql
+    )
+
+    // MARK: - Migrations
+
+    // Core authentication migrations
+    app.migrations.add(CreateUserMigration<DefaultUser>())
+    app.migrations.add(CreateTokenMigration<DefaultUserToken>())
+
+    // OAuth migrations
+    app.migrations.add(CreateOAuthProviderMigration())
+    // Note: MakeUserPasswordOptionalMigration is only needed for upgrading existing databases
+    // Since we're using CreateUserMigration which already has optional password, we skip it
+
+    // Admin migrations
+    // Note: AddRoleToUserMigration is only needed for upgrading existing databases
+    // Since CreateUserMigration already includes role field, we skip it
+    app.migrations.add(CreateAdminUserMigration())
+
+    // Custom fields migrations
+    app.migrations.add(CreateRegistrationFieldMigration())
+    app.migrations.add(CreateUserCustomFieldMigration())
+    app.migrations.add(SeedDefaultFieldsMigration())
+
+    // MARK: - Routes
+
+    try routes(app)
+
+    app.logger.info("FullStackExample configured successfully!")
+    app.logger.info("Server running on http://\(app.http.server.configuration.hostname):\(app.http.server.configuration.port)")
+}

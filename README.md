@@ -1,0 +1,345 @@
+# VaporAuth
+
+Модульный фреймворк аутентификации для Vapor 4 с архитектурой на базе протоколов.
+
+## 🎯 Обзор
+
+VaporAuth - это модульная система аутентификации для Vapor, разработанная с использованием протокол-ориентированного подхода. Каждый модуль может использоваться независимо или в комбинации с другими.
+
+## 📦 Модули
+
+### VaporAuthCore
+Базовый модуль с протоколами и default реализациями:
+- ✅ `AuthenticatableUser` - базовая аутентификация
+- ✅ `PasswordAuthenticatable` - аутентификация по паролю
+- ✅ `TokenGenerating` - генерация токенов
+- ✅ `TokenAuthenticatable` - валидация токенов
+- ✅ `RoleAuthenticatable` - роли и права доступа
+- ✅ `OAuthAuthenticatable` - OAuth интеграция
+- ✅ `CustomFieldsUser` - кастомные поля
+- ✅ `DefaultUser` - готовая реализация User
+- ✅ `DefaultUserToken` - готовая реализация Token
+
+### VaporAuthOAuth ✅
+OAuth 2.0 аутентификация:
+- ✅ Google OAuth provider
+- ✅ Account linking
+- ✅ OAuth-only users (без пароля)
+- ✅ Multiple providers per user
+- ✅ SimpleOAuthService
+- ✅ SimpleOAuthController
+
+### VaporAuthAdmin ✅
+Админ функционал и управление ролями:
+- ✅ AdminAuthMiddleware - проверка admin роли
+- ✅ RoleAuthMiddleware - гибкая проверка ролей
+- ✅ CreateAdminUserMigration
+- ✅ AddRoleToUserMigration
+
+### VaporAuthFields ✅
+Динамические регистрационные поля:
+- ✅ RegistrationField model
+- ✅ UserCustomField model
+- ✅ PublicFieldsController - публичный API
+- ✅ AdminFieldsController - admin CRUD
+- ✅ Field validation patterns
+- ✅ Multiple field types (text, email, select, etc.)
+
+## 🚀 Быстрый старт
+
+### Установка
+
+```swift
+// Package.swift
+dependencies: [
+    .package(url: "https://github.com/yourusername/VaporAuth.git", from: "1.0.0")
+],
+targets: [
+    .target(
+        name: "App",
+        dependencies: [
+            .product(name: "VaporAuth", package: "VaporAuth"), // Все модули
+            // Или отдельные модули:
+            // .product(name: "VaporAuthCore", package: "VaporAuth"),
+            // .product(name: "VaporAuthOAuth", package: "VaporAuth"),
+        ]
+    )
+]
+```
+
+### Использование Default реализаций (Самый быстрый способ)
+
+```swift
+import VaporAuthCore
+
+// configure.swift
+app.databases.use(.postgres(...), as: .psql)
+
+// Миграции для default моделей
+app.migrations.add(CreateUserMigration<DefaultUser>())
+app.migrations.add(CreateTokenMigration<DefaultUserToken>())
+
+try routes(app)
+
+// routes.swift
+try app.register(collection: SimpleAuthController())
+```
+
+Готово! У вас есть:
+- `POST /auth/register` - регистрация
+- `POST /auth/login` - логин
+- `GET /auth/me` - текущий пользователь (protected)
+- `POST /auth/logout` - выход (protected)
+
+### Создание своей User модели
+
+Создайте свою модель, реализующую нужные протоколы:
+
+```swift
+import Fluent
+import Vapor
+import VaporAuthCore
+
+final class User: Model, @unchecked Sendable {
+    static let schema = "users"
+
+    @ID(key: .id)
+    var id: UUID?
+
+    @Field(key: "email")
+    var email: String
+
+    @OptionalField(key: "password_hash")
+    var passwordHash: String?
+
+    @Field(key: "name")
+    var name: String
+
+    @Field(key: "role")
+    var role: String
+
+    @Timestamp(key: "created_at", on: .create)
+    var createdAt: Date?
+
+    @Children(for: \.$user)
+    var tokens: [UserToken]
+
+    init() { }
+}
+
+// Protocol conformances
+extension User: AuthenticatableUser {
+    var hasPassword: Bool { passwordHash != nil }
+}
+
+extension User: PasswordAuthenticatable {
+    // Использует default implementation
+}
+
+extension User: TokenGenerating {
+    typealias Token = UserToken
+
+    func generateToken() throws -> UserToken {
+        try .init(value: [UInt8].random(count: 16).base64, userID: self.requireID())
+    }
+}
+
+extension User: RoleAuthenticatable {
+    // Использует default implementation
+}
+
+extension User: Authenticatable { }
+```
+
+## 🏗️ Архитектура
+
+### Протокол-ориентированный дизайн
+
+Все функции реализованы через протоколы:
+
+```swift
+// Базовая аутентификация
+public protocol AuthenticatableUser: Model, Authenticatable {
+    var id: IDValue? { get set }
+    var email: String { get set }
+    var name: String { get set }
+    var hasPassword: Bool { get }
+}
+
+// Password authentication
+public protocol PasswordAuthenticatable: AuthenticatableUser {
+    var passwordHash: String? { get set }
+    func verify(password: String) throws -> Bool
+}
+
+// Token generation
+public protocol TokenGenerating {
+    associatedtype Token: TokenAuthenticatable
+    func generateToken() throws -> Token
+}
+```
+
+### Generic Controllers
+
+Контроллеры работают с любыми типами, реализующими протоколы:
+
+```swift
+public struct AuthController<U>: RouteCollection
+    where U: PasswordAuthenticatable & TokenGenerating {
+
+    public func boot(routes: RoutesBuilder) throws {
+        let auth = routes.grouped("auth")
+        auth.post("register", use: register)
+        auth.post("login", use: login)
+        // ...
+    }
+}
+```
+
+## 📖 Текущий статус реализации
+
+### ✅ VaporAuthCore - ЗАВЕРШЕН!
+- [x] Структура монорепозитория
+- [x] Package.swift с 4 модулями
+- [x] Все протоколы (Auth, Token, OAuth, Admin, CustomFields)
+- [x] Default модели (DefaultUser, DefaultUserToken, DefaultOAuthProvider, UserCustomField)
+- [x] SimpleAuthController (register, login, logout, me)
+- [x] SimpleTokenAuthenticator middleware
+- [x] DTOs (AuthDTO, UserDTO)
+- [x] Generic Migrations (CreateUserMigration, CreateTokenMigration)
+- [x] Успешная компиляция ✅
+- [x] USAGE guide
+
+### ✅ VaporAuthOAuth - ЗАВЕРШЕН!
+- [x] DefaultOAuthProvider model
+- [x] SimpleOAuthService (account linking logic)
+- [x] GoogleOAuthProvider (полный OAuth 2.0 flow)
+- [x] SimpleOAuthController (Google auth + callback)
+- [x] OAuthDTO (response models)
+- [x] Migrations (CreateOAuthProviderMigration, MakeUserPasswordOptionalMigration)
+- [x] Успешная компиляция ✅
+
+### ✅ VaporAuthAdmin - ЗАВЕРШЕН!
+- [x] AdminAuthMiddleware
+- [x] RoleAuthMiddleware
+- [x] Migrations (AddRoleToUserMigration, CreateAdminUserMigration)
+- [x] Успешная компиляция ✅
+
+### ✅ VaporAuthFields - ЗАВЕРШЕН!
+- [x] RegistrationField model
+- [x] UserCustomField model (moved to Core)
+- [x] PublicFieldsController
+- [x] AdminFieldsController (full CRUD)
+- [x] RegistrationFieldDTO
+- [x] Migrations (CreateRegistrationField, CreateUserCustomField, SeedDefaultFields)
+- [x] Успешная компиляция ✅
+
+### ✅ Examples - ЗАВЕРШЕНЫ!
+- [x] FullStackExample (все модули)
+- [x] MinimalAuthExample (только Core)
+- [x] OAuthOnlyExample (Core + OAuth)
+- [x] README для каждого примера
+- [x] Examples/README.md
+
+### 🚧 В разработке
+- [ ] Тесты для всех модулей
+- [ ] Детальная документация API
+- [ ] Migration Guide (BaseVapor → VaporAuth)
+
+## 📚 Примеры использования
+
+Полные рабочие примеры доступны в папке [Examples/](Examples/):
+- **[MinimalAuthExample](Examples/MinimalAuthExample/)** - только базовая аутентификация
+- **[OAuthOnlyExample](Examples/OAuthOnlyExample/)** - аутентификация + Google OAuth
+- **[FullStackExample](Examples/FullStackExample/)** - все модули вместе
+
+### Быстрые примеры кода
+
+### Минимальная настройка (5 минут)
+
+```swift
+import Vapor
+import VaporAuthCore
+
+// configure.swift
+public func configure(_ app: Application) async throws {
+    // Database
+    app.databases.use(.postgres(...), as: .psql)
+
+    // Migrations
+    app.migrations.add(CreateUserMigration<DefaultUser>())
+    app.migrations.add(CreateTokenMigration<DefaultUserToken>())
+
+    try routes(app)
+}
+
+// routes.swift
+func routes(_ app: Application) throws {
+    try app.register(collection: SimpleAuthController())
+}
+```
+
+### С OAuth (10 минут)
+
+```swift
+import VaporAuthCore
+import VaporAuthOAuth
+
+func routes(_ app: Application) throws {
+    try app.register(collection: SimpleAuthController())
+    try app.register(collection: SimpleOAuthController())
+}
+```
+
+### Full-stack (15 минут)
+
+```swift
+import VaporAuthCore
+import VaporAuthOAuth
+import VaporAuthAdmin
+import VaporAuthFields
+
+func routes(_ app: Application) throws {
+    // Basic auth
+    try app.register(collection: SimpleAuthController())
+
+    // OAuth
+    try app.register(collection: SimpleOAuthController())
+
+    // Public fields
+    try app.register(collection: PublicFieldsController())
+
+    // Admin routes (protected)
+    let admin = app.grouped(SimpleTokenAuthenticator())
+        .grouped(AdminAuthMiddleware())
+    try admin.register(collection: AdminFieldsController())
+}
+```
+
+## 🤝 Вклад в разработку
+
+Все основные модули завершены! ✅
+
+Следующие шаги:
+1. ~~Завершить VaporAuthCore~~ ✅
+2. ~~Реализовать VaporAuthOAuth~~ ✅
+3. ~~Реализовать VaporAuthAdmin~~ ✅
+4. ~~Реализовать VaporAuthFields~~ ✅
+5. ~~Создать примеры приложений~~ ✅
+6. Написать unit tests
+7. Создать детальную документацию API
+8. Migration guide (BaseVapor → VaporAuth)
+
+## 📄 Лицензия
+
+MIT License
+
+## 🔗 Ссылки
+
+- [Vapor Documentation](https://docs.vapor.codes)
+- [Fluent Documentation](https://docs.vapor.codes/fluent/overview/)
+- [Migration Guide](Documentation/MigrationGuide.md) (в разработке)
+
+---
+
+**Статус:** ✅ Все модули и примеры готовы! | Версия: 1.0.0-beta
